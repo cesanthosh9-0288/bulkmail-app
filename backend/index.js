@@ -1,16 +1,20 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
 const mongoose = require("mongoose");
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "*" // allow all for now
+}));
+
 app.use(express.json());
 
 // ----------------------
 // MongoDB Connection
 // ----------------------
-mongoose.connect("mongodb+srv://san:123@cluster0.lnyu3vm.mongodb.net/passkey?appName=Cluster0")
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to DB"))
   .catch(() => console.log("❌ DB Connection failed"));
 
