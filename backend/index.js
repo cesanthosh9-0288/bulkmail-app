@@ -5,8 +5,10 @@ const nodemailer = require("nodemailer");
 const mongoose = require("mongoose");
 
 const app = express();
+
+// CORS — allow frontend origin dynamically
 app.use(cors({
-  origin: "*" // allow all for now
+  origin: process.env.FRONTEND_URL || "*" 
 }));
 
 app.use(express.json());
@@ -14,18 +16,19 @@ app.use(express.json());
 // ----------------------
 // MongoDB Connection
 // ----------------------
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Connected to DB"))
-  .catch(() => console.log("❌ DB Connection failed"));
+const mongoURI = process.env.MONGO_URI;
+mongoose.connect(mongoURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch(err => console.log("❌ DB Connection failed", err));
 
 // ----------------------
-// MongoDB Collections
+// Collections
 // ----------------------
-
-// Credentials for sending email
 const Credential = mongoose.model("credential", {}, "bulkmail");
 
-// Email history collection
 const EmailHistory = mongoose.model(
   "emailhistory",
   {
@@ -39,7 +42,7 @@ const EmailHistory = mongoose.model(
 );
 
 // ----------------------
-// Hardcoded Admin Login
+// Admin Login
 // ----------------------
 const adminUsername = "san";
 const adminPassword = "Qart76p2$";
@@ -59,15 +62,13 @@ app.post("/login", (req, res) => {
 app.post("/sendemail", async (req, res) => {
   const { subject, msg, emailList } = req.body;
 
-  if (!emailList || emailList.length === 0 || !msg) {
+  if (!emailList?.length || !msg) {
     return res.send({ success: false, error: "Missing message or recipient list" });
   }
 
   try {
     const data = await Credential.find();
-    if (!data || data.length === 0) {
-      return res.send({ success: false, error: "No email credentials found" });
-    }
+    if (!data.length) return res.send({ success: false, error: "No email credentials found" });
 
     const user = data[0].toJSON().name || data[0].toJSON().user;
     const pass = data[0].toJSON().pass;
@@ -79,32 +80,28 @@ app.post("/sendemail", async (req, res) => {
 
     console.log("Sending emails to:", emailList);
 
-    // Send emails sequentially
-    for (let i = 0; i < emailList.length; i++) {
+    for (const recipient of emailList) {
       try {
         await transporter.sendMail({
           from: user,
-          to: emailList[i],
-          subject: subject,
+          to: recipient,
+          subject,
           text: msg,
         });
-        console.log("Email sent to:", emailList[i]);
+
+        console.log("Email sent to:", recipient);
       } catch (mailError) {
         console.log("Mail error:", mailError);
-
-        // Log failed email
         await EmailHistory.create({
           subject,
           message: msg,
-          recipients: [emailList[i]],
+          recipients: [recipient],
           status: "Failed",
         });
-
-        return res.send({ success: false, error: `Failed to send to ${emailList[i]}` });
+        return res.send({ success: false, error: `Failed to send to ${recipient}` });
       }
     }
 
-    // Log successful email batch
     await EmailHistory.create({
       subject,
       message: msg,
@@ -113,7 +110,6 @@ app.post("/sendemail", async (req, res) => {
     });
 
     res.send({ success: true });
-
   } catch (err) {
     console.log("Backend error:", err);
     res.send({ success: false, error: "Server error" });
@@ -121,7 +117,7 @@ app.post("/sendemail", async (req, res) => {
 });
 
 // ----------------------
-// Fetch Email History Endpoint
+// Fetch Email History
 // ----------------------
 app.get("/emailhistory", async (req, res) => {
   try {
@@ -134,8 +130,9 @@ app.get("/emailhistory", async (req, res) => {
 });
 
 // ----------------------
-// Start Server
+// Start Server (dynamic port for Vercel)
 // ----------------------
-app.listen(5000, () => {
-  console.log("✅ Server running on port 5000");
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
 });
