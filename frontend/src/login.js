@@ -18,7 +18,7 @@ function Login() {
     }
 
     axios
-      .post("http://localhost:5000/login", { username: user, password: pass })
+      .post(`${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}/login`, { username: user, password: pass })
       .then((res) => {
         if (res.data === true) {
           // Store login state

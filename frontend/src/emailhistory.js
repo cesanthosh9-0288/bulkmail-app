@@ -7,7 +7,7 @@ function EmailHistory() {
   useEffect(() => {
     async function fetchHistory() {
       try {
-        const res = await axios.get("http://localhost:5000/emailhistory");
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"}/emailhistory`);
         setHistory(res.data);
       } catch (err) {
         console.error("Failed to fetch email history:", err);
