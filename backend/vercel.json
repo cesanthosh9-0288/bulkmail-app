@@ -8,6 +8,21 @@
   ],
   "routes": [
     {
+      "src": "/login",
+      "dest": "/index.js",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/sendemail",
+      "dest": "/index.js",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/emailhistory",
+      "dest": "/index.js",
+      "methods": ["GET"]
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.js"
     }
