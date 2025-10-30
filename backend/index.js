@@ -6,10 +6,8 @@ const mongoose = require("mongoose");
 
 const app = express();
 
-// CORS — allow frontend origin dynamically
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "*" 
-}));
+// CORS — allow all origins
+app.use(cors());
 
 app.use(express.json());
 
